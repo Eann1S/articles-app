@@ -5,6 +5,7 @@ import { UsersModule } from '../users/users.module';
 import { AuthModule } from '../auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { ArticlesModule } from '../articles/articles.module';
+import { CacheModule } from '../cache/cache.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ArticlesModule } from '../articles/articles.module';
     AuthModule,
     UsersModule,
     ArticlesModule,
+    CacheModule,
   ],
   controllers: [],
   providers: [],
