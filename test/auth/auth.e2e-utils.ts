@@ -15,13 +15,9 @@ export async function loginUser(app: INestApplication, dto: AuthDto) {
 export async function createRandomUser(app: INestApplication) {
   const dto = generateAuthDto();
   const user = await registerUser(app, dto);
-  const loginDto = {
-    email: dto.email,
-    password: dto.password,
-  };
-  const loginResponse = await loginUser(app, loginDto);
+  const loginResponse = await loginUser(app, dto);
   return {
-    accessToken: loginResponse.body.access_token,
+    accessToken: loginResponse.body.accessToken,
     user: user.body as UserDto,
   };
 }
