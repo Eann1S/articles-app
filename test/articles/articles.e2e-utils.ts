@@ -6,10 +6,19 @@ import {
 } from '../../src/articles/articles.dtos';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
+import { PaginationDto } from '../../src/pagination/pagination.dtos';
+import { FilterDto } from '../../src/articles/filter.dto';
 
-export const getArticles = async (app: INestApplication) => {
-  const response = await request(app.getHttpServer()).get('/articles');
-  return response;
+export const getArticles = async (
+  app: INestApplication,
+  pagination: PaginationDto = { page: 1, limit: 10 },
+  filter?: FilterDto,
+) => {
+  const req = request(app.getHttpServer()).get('/articles').query(pagination);
+  if (filter) {
+    req.query(filter);
+  }
+  return req;
 };
 
 export const getArticle = async (app: INestApplication, id: number) => {

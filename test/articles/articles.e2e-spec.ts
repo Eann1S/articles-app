@@ -45,7 +45,94 @@ describe('Articles e2e tests', () => {
       const response = await getArticles(app);
 
       expect(response.status).toBe(200);
-      expect(response.body).toContainEqual(expect.objectContaining(article));
+      expect(response.body.data).toContainEqual(
+        expect.objectContaining(article),
+      );
+    });
+
+    it('should return a list of articles with pagination', async () => {
+      const { accessToken } = await createRandomUser(app);
+      await createRandomArticle(app, accessToken);
+      await createRandomArticle(app, accessToken);
+
+      const response = await getArticles(app, { page: 1, limit: 1 });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.length).toBe(1);
+      expect(response.body).toMatchObject({
+        page: '1',
+        limit: '1',
+      });
+    });
+
+    describe('GET /articles filter', () => {
+      it('should return a list of articles with title filter', async () => {
+        const { accessToken } = await createRandomUser(app);
+        const article = await createRandomArticle(app, accessToken);
+        await createRandomArticle(app, accessToken);
+
+        const response = await getArticles(
+          app,
+          { page: 1, limit: 10 },
+          { title: article.title },
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.body.data.length).toBe(1);
+        expect(response.body.data).toContainEqual(
+          expect.objectContaining(article),
+        );
+      });
+
+      it('should return a list of articles with description filter', async () => {
+        const { accessToken } = await createRandomUser(app);
+        const article = await createRandomArticle(app, accessToken);
+        await createRandomArticle(app, accessToken);
+
+        const response = await getArticles(
+          app,
+          { page: 1, limit: 10 },
+          { description: article.description },
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.body.data).toContainEqual(
+          expect.objectContaining(article),
+        );
+      });
+
+      it('should return a list of articles with content filter', async () => {
+        const { accessToken } = await createRandomUser(app);
+        const article = await createRandomArticle(app, accessToken);
+
+        const response = await getArticles(
+          app,
+          { page: 1, limit: 10 },
+          { content: article.content },
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.body.data).toContainEqual(
+          expect.objectContaining(article),
+        );
+      });
+
+      it('should return a list of articles with authorId filter', async () => {
+        const { accessToken } = await createRandomUser(app);
+        const article = await createRandomArticle(app, accessToken);
+        await createRandomArticle(app, accessToken);
+
+        const response = await getArticles(
+          app,
+          { page: 1, limit: 10 },
+          { authorId: article.authorId },
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.body.data).toContainEqual(
+          expect.objectContaining(article),
+        );
+      });
     });
   });
 

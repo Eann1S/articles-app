@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Req,
 } from '@nestjs/common';
 import { ArticlesService } from './articles.service';
@@ -28,6 +29,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Public } from '../auth/auth.guard';
+import { PaginatedDto, PaginationDto } from '../pagination/pagination.dtos';
+import { FilterDto } from './filter.dto';
 
 @ApiTags('articles')
 @ApiBearerAuth()
@@ -44,9 +47,15 @@ export class ArticlesController {
   })
   @Get()
   @Public()
-  async findAll(): Promise<ArticleWithAuthorDto[]> {
-    const articles = await this.articlesService.findAll();
-    return articles.map((article) => toArticleWithAuthorDto(article));
+  async findAll(
+    @Query() pagination: PaginationDto,
+    @Query() filter: FilterDto,
+  ): Promise<PaginatedDto<ArticleWithAuthorDto>> {
+    const articles = await this.articlesService.findAll(pagination, filter);
+    return {
+      ...articles,
+      data: articles.data.map((article) => toArticleWithAuthorDto(article)),
+    };
   }
 
   @HttpCode(HttpStatus.OK)

@@ -1,16 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { Between, FindOptionsWhere, Repository } from 'typeorm';
 import { Article } from './article.entity';
 import { CreateArticleDto, UpdateArticleDto } from './articles.dtos';
 import { CacheService } from '../cache/cache.service';
+import {
+  paginate,
+  PaginatedDto,
+  PaginationDto,
+} from '../pagination/pagination.dtos';
+import { FilterDto } from './filter.dto';
 
 @Injectable()
 export class ArticlesService {
   private readonly cacheOptions = {
     all: {
       ttl: 300,
-      key: (): string => 'articles',
+      key: (pagination?: PaginationDto, filter?: FilterDto): string =>
+        `articles:${JSON.stringify(pagination)}:${JSON.stringify(filter)}`,
     },
     one: {
       ttl: 300,
@@ -30,17 +37,28 @@ export class ArticlesService {
     private cacheService: CacheService,
   ) {}
 
-  async findAll(): Promise<Article[]> {
-    const cacheKey = this.cacheOptions.all.key();
-    const cachedArticles = await this.cacheService.get<Article[]>(cacheKey);
+  async findAll(
+    pagination: PaginationDto,
+    filter: FilterDto,
+  ): Promise<PaginatedDto<Article>> {
+    const cacheKey = this.cacheOptions.all.key(pagination, filter);
+    const cachedArticles =
+      await this.cacheService.get<PaginatedDto<Article>>(cacheKey);
     if (cachedArticles) {
       return cachedArticles;
     }
+    const where = this.buildWhereClause(filter);
     const articles = await this.articleRepository.find({
+      where,
       relations: ['author'],
     });
-    await this.cacheService.set(cacheKey, articles, this.cacheOptions.all.ttl);
-    return articles;
+    const paginatedArticles = paginate(articles, pagination);
+    await this.cacheService.set(
+      cacheKey,
+      paginatedArticles,
+      this.cacheOptions.all.ttl,
+    );
+    return paginatedArticles;
   }
 
   async findOneBy(
@@ -85,7 +103,7 @@ export class ArticlesService {
       content,
       authorId,
     });
-    await this.cacheService.del(this.cacheOptions.all.key());
+    await this.invalidateCacheForAllArticles();
     return this.findOneOrFail({ id: createdArticle.id });
   }
 
@@ -105,6 +123,30 @@ export class ArticlesService {
     await this.articleRepository.delete(id);
   }
 
+  private buildWhereClause(filter: FilterDto): FindOptionsWhere<Article> {
+    const where: FindOptionsWhere<Article> = {};
+    if (filter.title) {
+      where.title = filter.title;
+    }
+    if (filter.description) {
+      where.description = filter.description;
+    }
+    if (filter.content) {
+      where.content = filter.content;
+    }
+    if (filter.authorId) {
+      where.authorId = filter.authorId;
+    }
+    if (
+      filter.createdAtStart &&
+      filter.createdAtEnd &&
+      filter.createdAtStart <= filter.createdAtEnd
+    ) {
+      where.createdAt = Between(filter.createdAtStart, filter.createdAtEnd);
+    }
+    return where;
+  }
+
   private async cacheArticle(
     cacheKey: string,
     article: Article,
@@ -116,11 +158,16 @@ export class ArticlesService {
     );
   }
 
+  private async invalidateCacheForAllArticles(): Promise<void> {
+    const keys = await this.cacheService.keys(this.cacheOptions.all.key());
+    await this.cacheService.del(...keys);
+  }
+
   private async invalidateCacheForArticle(id: number): Promise<void> {
     const cacheKeys = await this.cacheService.smembers(
       this.cacheOptions.keys.key(id),
     );
     await this.cacheService.del(...cacheKeys);
-    await this.cacheService.del(this.cacheOptions.all.key());
+    await this.invalidateCacheForAllArticles();
   }
 }
