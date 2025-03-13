@@ -96,6 +96,7 @@ describe('Articles e2e tests', () => {
         );
 
         expect(response.status).toBe(200);
+        expect(response.body.data.length).toBe(1);
         expect(response.body.data).toContainEqual(
           expect.objectContaining(article),
         );
@@ -104,7 +105,7 @@ describe('Articles e2e tests', () => {
       it('should return a list of articles with content filter', async () => {
         const { accessToken } = await createRandomUser(app);
         const article = await createRandomArticle(app, accessToken);
-
+        await createRandomArticle(app, accessToken);
         const response = await getArticles(
           app,
           { page: 1, limit: 10 },
@@ -112,6 +113,7 @@ describe('Articles e2e tests', () => {
         );
 
         expect(response.status).toBe(200);
+        expect(response.body.data.length).toBe(1);
         expect(response.body.data).toContainEqual(
           expect.objectContaining(article),
         );
@@ -119,8 +121,9 @@ describe('Articles e2e tests', () => {
 
       it('should return a list of articles with authorId filter', async () => {
         const { accessToken } = await createRandomUser(app);
+        const { accessToken: accessToken2 } = await createRandomUser(app);
         const article = await createRandomArticle(app, accessToken);
-        await createRandomArticle(app, accessToken);
+        await createRandomArticle(app, accessToken2);
 
         const response = await getArticles(
           app,
@@ -129,6 +132,7 @@ describe('Articles e2e tests', () => {
         );
 
         expect(response.status).toBe(200);
+        expect(response.body.data.length).toBe(1);
         expect(response.body.data).toContainEqual(
           expect.objectContaining(article),
         );

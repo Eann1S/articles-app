@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { dbConfig } from '../config/db.config';
+import dataSource from '../config/db.config';
 import { UsersModule } from '../users/users.module';
 import { AuthModule } from '../auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
@@ -13,7 +13,7 @@ import { CacheModule } from '../cache/cache.module';
       isGlobal: true,
       expandVariables: true,
     }),
-    TypeOrmModule.forRoot(dbConfig),
+    TypeOrmModule.forRoot(dataSource.options),
     AuthModule,
     UsersModule,
     ArticlesModule,
