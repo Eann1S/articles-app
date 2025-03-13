@@ -30,12 +30,26 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     await this.redis.set(key, JSON.stringify(value), 'EX', ttl);
   }
 
-  async del(key: string) {
-    await this.redis.del(key);
+  async del(...keys: string[]) {
+    const multi = this.redis.multi();
+    keys.forEach((key) => multi.del(key));
+    await multi.exec();
   }
 
   async flushall() {
     await this.redis.flushall();
+  }
+
+  async sadd(key: string, ...values: string[]) {
+    await this.redis.sadd(key, ...values);
+  }
+
+  async smembers(key: string) {
+    return await this.redis.smembers(key);
+  }
+
+  async srem(key: string, ...values: string[]) {
+    await this.redis.srem(key, ...values);
   }
 
   async keys(pattern: string) {

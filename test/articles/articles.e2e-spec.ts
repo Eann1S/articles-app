@@ -13,9 +13,11 @@ import {
   updateArticle,
 } from './articles.e2e-utils';
 import { createRandomUser } from '../auth/auth.e2e-utils';
+import { CacheService } from '../../src/cache/cache.service';
 
 describe('Articles e2e tests', () => {
   let app: INestApplication;
+  let cacheService: CacheService;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -24,10 +26,15 @@ describe('Articles e2e tests', () => {
 
     app = module.createNestApplication();
     await app.init();
+    cacheService = app.get<CacheService>(CacheService);
   });
 
   afterAll(async () => {
     await app.close();
+  });
+
+  beforeEach(async () => {
+    await cacheService.flushall();
   });
 
   describe('GET /articles', () => {
