@@ -159,7 +159,9 @@ export class ArticlesService {
   }
 
   private async invalidateCacheForAllArticles(): Promise<void> {
-    const keys = await this.cacheService.keys(this.cacheOptions.all.key());
+    const keys = await this.cacheService.keys(
+      `${this.cacheOptions.all.key()}*`,
+    );
     await this.cacheService.del(...keys);
   }
 
